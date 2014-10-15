@@ -1,0 +1,124 @@
+<?php
+  /*
+    This module was created by Dennis Jarecke on October 15, 2014 for
+    a Cleveland Drupal Users Group presentation entitiled "HTML in
+    Drupal the Easy Way!"
+
+    
+   */
+
+
+
+function easy_html_email_demo_permission(){
+  // hook_permission
+  return array(
+	       'access email demo page' => array('title' => t('Access Email Demo Page')),
+	       );
+  }
+
+
+
+
+function easy_html_email_demo_menu(){
+  // hook_menu
+  $items['emaildemo']
+    = array(
+	    'title' => 'Email Demo Page',
+	    'description' => 'Semd Emails',
+	    'page callback' => 'email_test_page',
+	    'access callback' => 'user_access', // main drupal access function
+	    'access arguments' => array('access email demo page'),
+	    'type' => MENU_CALLBACK,
+	    );
+  return $items;
+}
+
+
+
+
+
+function email_test_page(){
+  /*
+    This is a much easier way to test an email. And this can be
+    safely used in production with noboday but admin touching this
+    page!
+  */
+  
+
+  $subject = 'This is a very cool test email!';
+  $message = array();
+  $message[] = 'Hey, this is line 1 of our message';
+  $message[] = 'And this is line 2';
+  $message[] = 'and this is line three with an h1 tag <h1>here!</h1>';
+  /*
+    Yes, you do want to input the lines of your email more or less
+    into an array - don't ask me why 'cause I don't know.  Trial and
+    error says you want to more or less be sensitive to doing this.
+    Drupal experts can chime in at any moment now . . . . (crickets)
+  */
+
+
+  $module = 'easy_html_email_demo'; // the name of your module
+  $key = 'generic_email_message';     // anything you want so think of this as a category of emails (see hook_mail below).  A key to identify the e-mail sent. The final e-mail id for e-mail altering will be {$module}_{$key}.
+  $email_to = 'jarecke@gmail.com';    // If you don't know what this is then you need some serious help.  I suggest Dr. Phil.
+  $language = language_default();     // Yes, Drupal is multilingual and apparently emails can be to.  If you need multilingual emails then ask an expert and not me.
+  $params= array();
+  $params['subject'] = $subject;      // Trust me and see hook_mail below.
+  $params['body'] = $message;         // Trust me and see hook_mail below.
+  $email_from = variable_get('site_mail', 'foo@anotheremail.com'); // Again, obvious and therapy otherwise.
+  $send = TRUE; // TRUE sends the message.  hook_mail_alter may set it to FALSE to cancel sending it.
+
+
+  //$key = 'htmltest';
+  
+
+  $result = drupal_mail($module, $key, $email_to, $language, $params, $email_from, $send);
+
+
+  $markup = "When we go to this page an email will be sent.  Check your inbox NOW!";
+  return array('#markup' => $markup);
+  
+  }
+
+
+
+function easy_html_email_demo_mail($key,&$message,$params){
+
+ /*
+   This is hook_mail which is called by the Drupal API function
+   drupal_mail()
+
+   $message['body'] must be an array. You don't need to do
+   $message['body'] = array(); because drupal_mail() sets it to an
+   empty array when the hook is invoked. My experience has been that
+   if you still do $message['body'] = array(); then you may not get
+   some emails.  You have been warned.
+ */
+  switch( $key ){
+  case "generic_email_message":
+    $message['subject'] = $params['subject'];
+    $message['body'] = $params['body'];
+    $message['body'][] = 'Whoa!  I am adding a part of the email in hook_mail!';
+    $message['body'][] = 'In fact, I can create another key that will be used to populate the entire email from hook_mail.';
+    $message['body'][] = 'Note that this is not an HTML Email';
+    /*
+      Ok, yeah this seems silly to me as well, but usually there is a
+      good reason for this sort of thing in Drupal.  Otherwise, it's
+      simple so just do it and things work out fine.
+    */
+    break;
+  case "htmltest":
+    //$message['theme'] = 'seven';
+    $message['subject'] = $params['subject'];
+    $message['body'] = $params['body'];
+    $message['body'][] = 'Whoa!  I am adding a part of the email in hook_mail!';
+    $message['body'][] = 'In fact, I can create another key that will be used to populate the entire email from hook_mail.';
+    $message['body'][] = 'Note that this IS an HTML Email';
+    break;  
+  default:
+    $message['subject'] = "Oops!";
+    $message['body'][] = "You should not get this!";
+  }      
+}
+
+?>

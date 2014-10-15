@@ -1,0 +1,4 @@
+name = Easy HTML Email Demo
+description = A Demo to easily create HTML email
+package = Email
+core = 7.x
